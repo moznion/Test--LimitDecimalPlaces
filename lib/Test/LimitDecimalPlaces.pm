@@ -11,26 +11,22 @@ use vars qw/ $VERSION @EXPORT @ISA /;
 BEGIN {
     $VERSION = '0.01';
     @ISA     = qw/Exporter/;
-    @EXPORT  = qw/limit_ok limit_by/;    #TODO
+    @EXPORT  = qw/limit_ok limit_ok_by/;    #TODO
 }
 
 my $TestBuilder   = Test::Builder->new;
-my $Num_of_digits = 7;
+my $default_num_of_digits = 7;
 
 sub import {
     my $self  = shift;
-    my $pack = caller;
+    my $pack  = caller;
     my $found = grep /num_of_digits/, @_;
 
     if ($found) {
-        my ( $key_option, $value ) = splice @_, 0, 2;
-        if ( $value < 0 ) {
-            croak 'Value of limit number of digits must be a number greater than or equal to zero.';
-        }
-        unless ( $key_option eq 'num_of_digits' ) {
-            croak 'Test::LimitDecimalPlaces option must be specified first.';
-        }
-        $Num_of_digits = $value;
+        my ( $key, $value ) = splice @_, 0, 2;
+        croak 'Value of limit number of digits must be a number greater than or equal to zero.' if $value < 0;
+        croak 'Test::LimitDecimalPlaces option must be specified first.' unless $key eq 'num_of_digits';
+        $default_num_of_digits = $value;
     }
 
     $TestBuilder->exported_to($pack);
@@ -43,31 +39,28 @@ sub _check {
     my $diag;
 
     my $ok = (
-        sprintf( "%.${num_of_digits}f", $x ) ==
-          sprintf( "%.${num_of_digits}f", $y ) );
+        sprintf( "%.${num_of_digits}f", $x ) == sprintf( "%.${num_of_digits}f", $y ) );
     unless ($ok) {
         $diag = "Error";    # TODO
     }
     return ( $ok, $diag );
 }
 
-sub limit_by {
+sub limit_ok_by {
     my ( $x, $y, $num_of_digits, $test_name ) = @_;
 
-    if ($num_of_digits < 0) {
-        croak 'Value of limit number of digits must be a number greater than or equal to zero.';
-    }
+    croak 'Value of limit number of digits must be a number greater than or equal to zero.' if ( $num_of_digits < 0 );
     $num_of_digits = int($num_of_digits);
 
-    my($ok, $diag) = _check( $x, $y, $num_of_digits, $test_name);
+    my ( $ok, $diag ) = _check( $x, $y, $num_of_digits, $test_name );
 
-    return $TestBuilder->ok($ok, $test_name) || $TestBuilder->diag($diag);
+    return $TestBuilder->ok( $ok, $test_name ) || $TestBuilder->diag($diag);
 }
 
 sub limit_ok {
     my ( $x, $y, $test_name ) = @_;
 
-    return limit_by( $x, $y, $Num_of_digits, $test_name );
+    return limit_ok_by( $x, $y, $default_num_of_digits, $test_name );
 }
 
 1;
