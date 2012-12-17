@@ -38,49 +38,66 @@ sub import {
 }
 
 sub _construct_err_msg {
-    my ( $x, $y, $num_of_digits, $is_ok ) = @_;
+    my ( $x, $y, $num_of_digits ) = @_;
 
-    my $msg =
+    return
         sprintf( "%.${num_of_digits}f", $x ) . ' and '
-      . sprintf( "%.${num_of_digits}f", $y );
-    return $msg .=
-      $is_ok
-      ? ' are not equal by limiting decimal places is ' . $num_of_digits
-      : ' are equal by limiting decimal places is ' . $num_of_digits;
-}
-
-sub _construct_err_msg_for_ok {
-    my ( $x, $y, $num_of_digits ) = @_;
-    return _construct_err_msg( $x, $y, $num_of_digits, 1 );
-}
-
-sub _construct_err_msg_for_not_ok {
-    my ( $x, $y, $num_of_digits ) = @_;
-    return _construct_err_msg( $x, $y, $num_of_digits, 0 );
+      . sprintf( "%.${num_of_digits}f", $y )
+      . ' are not equal by limiting decimal places is ' . $num_of_digits;
 }
 
 sub _check {
-    my ( $x, $y, $num_of_digits, $test_name ) = @_;
+    my ( $x, $y, $num_of_digits ) = @_;
+
+    my $is_array = 0;
 
     croak 'Value of limit number of digits must be a number '
       . 'greater than or equal to zero.' if ( $num_of_digits < 0 );
     $num_of_digits = int($num_of_digits);
 
-    my $ok = (
-        sprintf( "%.${num_of_digits}f", $x ) ==
-          sprintf( "%.${num_of_digits}f", $y ) );
-    my $diag;
-    $diag = _construct_err_msg_for_ok( $x, $y, $num_of_digits ) unless ($ok);
+    my ($ok, $diag) = (1, '');
+
+    if (ref $x eq 'ARRAY' || ref $y eq 'ARRAY') {
+        $is_array = 1;
+        unless (scalar(@$x) == scalar(@$y)) {
+            $ok = 0;
+            $diag = "Got length of an array is " . scalar(@$x) .
+                    ", but expected length of an array is " . scalar(@$y);
+            return ($ok, $diag);
+        }
+    }
+
+    if ($is_array) {
+        for my $i ( 0 .. $#$x ) {
+            ($ok, $diag) = _check($x->[$i], $y->[$i], $num_of_digits);
+            unless ($ok) {
+                $diag .= ', number of element is ' . $i . ' in array';
+                last;
+            }
+        }
+    } else {
+        $ok = (
+            sprintf( "%.${num_of_digits}f", $x ) ==
+              sprintf( "%.${num_of_digits}f", $y ) );
+        $diag = _construct_err_msg( $x, $y, $num_of_digits ) unless ($ok);
+    }
+
     return ( $ok, $diag );
 }
 
 sub _flip {
-    my ( $state, $x, $y, $num_of_digits ) = @_;
+    my ( $state, $x, $y, $num_of_digits, $is_array ) = @_;
 
     $state = !$state;
     my $diag;
-    $diag = _construct_err_msg_for_not_ok( $x, $y, $num_of_digits )
-      unless $state;
+    unless ($state) {
+        if ($is_array) {
+            $diag = 'Both of arrays are the same.';
+        } else {
+            $diag = _construct_err_msg( $x, $y, $num_of_digits );
+            $diag =~ s/ not//;
+        }
+    }
 
     return ( $state, $diag );
 }
@@ -104,8 +121,11 @@ sub limit_ok($$;$) {
 sub limit_not_ok_by($$$;$) {
     my ( $x, $y, $num_of_digits, $test_name ) = @_;
 
+    my $is_array = 0;
+    $is_array = 1 if (ref $x eq 'ARRAY' || ref $y eq 'ARRAY' );
+
     my ( $ok, $diag ) = _check( $x, $y, $num_of_digits, $test_name );
-    ( $ok, $diag ) = _flip( $ok, $x, $y, $num_of_digits );
+    ( $ok, $diag ) = _flip( $ok, $x, $y, $num_of_digits, $is_array );
     return $TestBuilder->ok( $ok, $test_name ) || $TestBuilder->diag($diag);
 }
 
