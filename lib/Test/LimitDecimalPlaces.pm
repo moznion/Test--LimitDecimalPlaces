@@ -14,7 +14,7 @@ BEGIN {
     @EXPORT  = qw/ limit_ok limit_ok_by limit_not_ok limit_not_ok_by /;    #TODO
 }
 
-my $TestBuilder   = Test::Builder->new;
+my $TestBuilder           = Test::Builder->new;
 my $default_num_of_digits = 7;
 
 sub import {
@@ -24,8 +24,11 @@ sub import {
 
     if ($found) {
         my ( $key, $value ) = splice @_, 0, 2;
-        croak 'Value of limit number of digits must be a number greater than or equal to zero.' if $value < 0;
-        croak 'Test::LimitDecimalPlaces option must be specified first.' unless $key eq 'num_of_digits';
+        croak 'Value of limit number of digits must be a number greater '
+          . 'than or equal to zero.'
+          if $value < 0;
+        croak 'Test::LimitDecimalPlaces option must be specified first.'
+          unless $key eq 'num_of_digits';
         $default_num_of_digits = $value;
     }
 
@@ -34,23 +37,52 @@ sub import {
     $self->export_to_level( 1, $self, $_ ) for @EXPORT;
 }
 
+sub _construct_err_msg {
+    my ( $x, $y, $num_of_digits, $is_ok ) = @_;
+
+    my $msg =
+        sprintf( "%.${num_of_digits}f", $x ) . ' and '
+      . sprintf( "%.${num_of_digits}f", $y );
+    return $msg .=
+      $is_ok
+      ? ' are not equal by limiting decimal places is ' . $num_of_digits
+      : ' are equal by limiting decimal places is ' . $num_of_digits;
+}
+
+sub _construct_err_msg_for_ok {
+    my ( $x, $y, $num_of_digits ) = @_;
+    return _construct_err_msg( $x, $y, $num_of_digits, 1 );
+}
+
+sub _construct_err_msg_for_not_ok {
+    my ( $x, $y, $num_of_digits ) = @_;
+    return _construct_err_msg( $x, $y, $num_of_digits, 0 );
+}
+
 sub _check {
     my ( $x, $y, $num_of_digits, $test_name ) = @_;
 
-    croak 'Value of limit number of digits must be a number greater than or equal to zero.' if ( $num_of_digits < 0 );
+    croak 'Value of limit number of digits must be a number '
+      . 'greater than or equal to zero.' if ( $num_of_digits < 0 );
     $num_of_digits = int($num_of_digits);
 
-    my $diag;
     my $ok = (
-        sprintf( "%.${num_of_digits}f", $x ) == sprintf( "%.${num_of_digits}f", $y ) );
-    unless ($ok) {
-        $diag =
-            sprintf( "%.${num_of_digits}f", $x ) . ' and '
-          . sprintf( "%.${num_of_digits}f", $y )
-          . ' are not equal by limiting decimal places is '
-          . $num_of_digits;
-    }
+        sprintf( "%.${num_of_digits}f", $x ) ==
+          sprintf( "%.${num_of_digits}f", $y ) );
+    my $diag;
+    $diag = _construct_err_msg_for_ok( $x, $y, $num_of_digits ) unless ($ok);
     return ( $ok, $diag );
+}
+
+sub _flip {
+    my ( $state, $x, $y, $num_of_digits ) = @_;
+
+    $state = !$state;
+    my $diag;
+    $diag = _construct_err_msg_for_not_ok( $x, $y, $num_of_digits )
+      unless $state;
+
+    return ( $state, $diag );
 }
 
 sub limit_ok_by($$$;$) {
@@ -73,6 +105,7 @@ sub limit_not_ok_by($$$;$) {
     my ( $x, $y, $num_of_digits, $test_name ) = @_;
 
     my ( $ok, $diag ) = _check( $x, $y, $num_of_digits, $test_name );
+    ( $ok, $diag ) = _flip( $ok, $x, $y, $num_of_digits );
     return $TestBuilder->ok( $ok, $test_name ) || $TestBuilder->diag($diag);
 }
 

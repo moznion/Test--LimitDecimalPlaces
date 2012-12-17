@@ -11,10 +11,10 @@ BEGIN {
 limit_ok_by(0, 0, 5, 'Test zero.');
 limit_ok_by(42, 42, 5, 'Test integer');
 limit_ok_by(1.0, 1.1, 0, 'Test only integer component.');
-limit_ok_by(1.23456, 1.23456, 5, 'Test same value.');
-limit_ok_by(1.234567, 1.234567, 6, 'Test same value by different limit value.');
-limit_ok_by(1.00001, 1.000006, 5, 'Test similar value.');
-limit_ok_by(1.000001, 1.0000006, 6, 'Test similar value by different limit value.');
+limit_ok_by(1.23456, 1.23456, 5, 'Test same values.');
+limit_ok_by(1.234567, 1.234567, 6, 'Test same values by different limit value.');
+limit_ok_by(1.00001, 1.000006, 5, 'Test similar values.');
+limit_ok_by(1.000001, 1.0000006, 6, 'Test similar values by different limit value.');
 throws_ok { limit_ok_by(1.0, 1.0, -1) }
     qr/Value of limit number of digits must be a number greater than or equal to zero./;
 
