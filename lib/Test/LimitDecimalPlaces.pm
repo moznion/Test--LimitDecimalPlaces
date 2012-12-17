@@ -10,8 +10,8 @@ use vars qw/ $VERSION @EXPORT @ISA /;
 
 BEGIN {
     $VERSION = '0.01';
-    @ISA     = qw/Exporter/;
-    @EXPORT  = qw/limit_ok limit_ok_by/;    #TODO
+    @ISA     = qw/ Exporter /;
+    @EXPORT  = qw/ limit_ok limit_ok_by limit_not_ok limit_not_ok_by /;    #TODO
 }
 
 my $TestBuilder   = Test::Builder->new;
@@ -36,31 +36,53 @@ sub import {
 
 sub _check {
     my ( $x, $y, $num_of_digits, $test_name ) = @_;
-    my $diag;
-
-    my $ok = (
-        sprintf( "%.${num_of_digits}f", $x ) == sprintf( "%.${num_of_digits}f", $y ) );
-    unless ($ok) {
-        $diag = "Error";    # TODO
-    }
-    return ( $ok, $diag );
-}
-
-sub limit_ok_by {
-    my ( $x, $y, $num_of_digits, $test_name ) = @_;
 
     croak 'Value of limit number of digits must be a number greater than or equal to zero.' if ( $num_of_digits < 0 );
     $num_of_digits = int($num_of_digits);
 
-    my ( $ok, $diag ) = _check( $x, $y, $num_of_digits, $test_name );
+    my $diag;
+    my $ok = (
+        sprintf( "%.${num_of_digits}f", $x ) == sprintf( "%.${num_of_digits}f", $y ) );
+    unless ($ok) {
+        $diag =
+            sprintf( "%.${num_of_digits}f", $x ) . ' and '
+          . sprintf( "%.${num_of_digits}f", $y )
+          . ' are not equal by limiting decimal places is '
+          . $num_of_digits;
+    }
+    return ( $ok, $diag );
+}
 
+sub limit_ok_by($$$;$) {
+    my ( $x, $y, $num_of_digits, $test_name ) = @_;
+
+    my ( $ok, $diag ) = _check( $x, $y, $num_of_digits, $test_name );
     return $TestBuilder->ok( $ok, $test_name ) || $TestBuilder->diag($diag);
 }
 
-sub limit_ok {
+sub limit_ok($$;$) {
     my ( $x, $y, $test_name ) = @_;
 
-    return limit_ok_by( $x, $y, $default_num_of_digits, $test_name );
+    {
+        local $Test::Builder::Level = $Test::Builder::Level + 1;
+        limit_ok_by( $x, $y, $default_num_of_digits, $test_name );
+    }
+}
+
+sub limit_not_ok_by($$$;$) {
+    my ( $x, $y, $num_of_digits, $test_name ) = @_;
+
+    my ( $ok, $diag ) = _check( $x, $y, $num_of_digits, $test_name );
+    return $TestBuilder->ok( $ok, $test_name ) || $TestBuilder->diag($diag);
+}
+
+sub limit_not_ok($$;$) {
+    my ( $x, $y, $test_name ) = @_;
+
+    {
+        local $Test::Builder::Level = $Test::Builder::Level + 1;
+        limit_not_ok_by( $x, $y, $default_num_of_digits, $test_name );
+    }
 }
 
 1;
