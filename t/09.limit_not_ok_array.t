@@ -7,7 +7,7 @@ select(STDERR); $|++;
 
 BEGIN {
     use Test::Builder::Tester;
-    use Test::LimitDecimalPlaces tests => 3;
+    use Test::LimitDecimalPlaces tests => 5;
 }
 
 limit_not_ok(
@@ -17,9 +17,21 @@ limit_not_ok(
 );
 
 limit_not_ok(
+    [ 0, 1, 0.1, 0.0000001, 0.0000001, [ 0, 1, 0.1, 0.0000001, 0.0000001 ] ],
+    [ 0, 1, 0.1, 0.0000001, 0.0000001, [ 0, 1, 0.1, 0.0000002, 0.0000001 ] ],
+    'Test different arrays recursive.'
+);
+
+limit_not_ok(
     [ 0, 1, 0.1, 0.0000001, 0.0000001 ],
     [ 0, 1, 0.1, 0.0000001 ],
-    'Test different lenght arrays.'
+    'Test different length arrays.'
+);
+
+limit_not_ok(
+    [ 0, 1, 0.1, 0.0000001, 0.0000001, [ 0, 1, 0.1, 0.0000001, 0.0000001 ] ],
+    [ 0, 1, 0.1, 0.0000001, 0.0000001, [ 0, 1, 0.1, 0.0000001 ] ],
+    'Test different length arrays recursive.'
 );
 
 test_out('not ok 1 - Test same arrays.');

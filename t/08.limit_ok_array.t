@@ -4,13 +4,19 @@ use utf8;
 
 BEGIN {
     use Test::Builder::Tester;
-    use Test::LimitDecimalPlaces tests => 3;
+    use Test::LimitDecimalPlaces tests => 4;
 }
 
 limit_ok(
     [ 0, 1, 0.1, 0.0000001, 0.0000001 ],
     [ 0, 1, 0.1, 0.0000001, 0.00000006 ],
     'Test arrays.'
+);
+
+limit_ok(
+    [ 0, 1, 0.1, 0.0000001, 0.0000001, [ 0, 1, 0.1, 0.0000001, 0.0000001 ] ],
+    [ 0, 1, 0.1, 0.0000001, 0.00000006, [ 0, 1, 0.1, 0.0000001, 0.00000006 ] ],
+    'Test arrays recursive.'
 );
 
 test_out('not ok 1 - Test arrays those differ length.');
