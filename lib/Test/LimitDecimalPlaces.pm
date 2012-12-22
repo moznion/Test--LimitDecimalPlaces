@@ -11,7 +11,7 @@ use vars qw/ $VERSION @EXPORT @ISA /;
 BEGIN {
     $VERSION = '0.01';
     @ISA     = qw/ Exporter /;
-    @EXPORT  = qw/ limit_ok limit_ok_by limit_not_ok limit_not_ok_by /;    #TODO
+    @EXPORT  = qw/ limit_ok limit_ok_by limit_not_ok limit_not_ok_by /;
 }
 
 my $TestBuilder           = Test::Builder->new;
@@ -24,11 +24,13 @@ sub import {
 
     if ($found) {
         my ( $key, $value ) = splice @_, 0, 2;
-        croak 'Value of limit number of digits must be a number greater '
-          . 'than or equal to zero.'
-          if $value < 0;
-        croak 'Test::LimitDecimalPlaces option must be specified first.'
-          unless $key eq 'num_of_digits';
+
+        if ( $value < 0 ) {
+            croak 'Value of limit number of digits must be a number greater than or equal to zero.';
+        }
+        unless ( $key eq 'num_of_digits' ) {
+            croak 'Test::LimitDecimalPlaces option must be specified first.';
+        }
         $default_num_of_digits = $value;
     }
 
