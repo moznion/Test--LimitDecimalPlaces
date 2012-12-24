@@ -14,7 +14,7 @@ limit_ok(0, 0, 'Test zero.');
 limit_ok(42, 42, 'Test integer');
 limit_ok(1.234567, 1.234567, 'Test the same floating-point values.');
 limit_ok(0.1234567, 0.1234567, 'Test the same floating-point values overed limiting num of decimal places.');
-limit_ok(0.000001, 0.0000006, 'Test similar value.') ."\n";
+limit_ok(0.000001, 0.0000006, 'Test similar value.');
 
 test_out('not ok 1 - Test different values.');
 test_fail(+5);
